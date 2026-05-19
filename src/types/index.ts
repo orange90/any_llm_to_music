@@ -1,39 +1,64 @@
-export type ProviderId = 'anthropic' | 'openai' | 'openrouter';
+export interface Endpoint {
+  id: string;
+  name: string;
+  baseURL: string;
+  apiKey: string;
+  model: string;
+}
+
+export interface ClientEndpoint {
+  id: string;
+  name: string;
+  baseURL: string;
+  apiKey: string;
+  model: string;
+}
 
 export interface Track {
   id: string;
   title: string;
   prompt: string;
   code: string;
-  provider: ProviderId;
+  endpoint_name: string;
   model: string;
   created_at: number;
 }
 
-export interface UserKeys {
-  anthropic?: { apiKey?: string; baseURL?: string };
-  openai?: { apiKey?: string; baseURL?: string };
-  openrouter?: { apiKey?: string; baseURL?: string };
-}
-
-export interface ProviderInfo {
-  id: ProviderId;
-  label: string;
-  models: string[];
-  defaultModel: string;
-  configured: boolean;
-  source: 'env' | 'user' | 'none';
-}
-
 export interface GenerateRequest {
   prompt: string;
-  provider: ProviderId;
+  endpoints?: ClientEndpoint[];
+}
+
+export interface EndpointGenerateResult {
+  endpointId: string;
+  endpointName: string;
   model: string;
-  userKeys?: UserKeys;
+  ok: boolean;
+  code?: string;
+  raw?: string;
+  track?: Track;
+  error?: string;
 }
 
 export interface GenerateResponse {
-  code: string;
-  raw: string;
-  track: Track;
+  source: 'default' | 'user';
+  results: EndpointGenerateResult[];
+  defaultQuota?: {
+    limit: number;
+    used: number;
+    remaining: number;
+  };
+}
+
+export interface TestEndpointRequest {
+  baseURL: string;
+  apiKey: string;
+  model: string;
+}
+
+export interface TestEndpointResponse {
+  ok: boolean;
+  latencyMs?: number;
+  message?: string;
+  reply?: string;
 }

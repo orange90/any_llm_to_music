@@ -28,7 +28,7 @@ export function HistoryList({ tracks, onPick, onDelete, loading }: Props) {
             <div className="flex-1 min-w-0">
               <div className="text-sm truncate">{t.title}</div>
               <div className="text-xs text-muted truncate">
-                {t.provider} · {t.model} · {new Date(t.created_at).toLocaleString()}
+                {t.endpoint_name} · {t.model} · {new Date(t.created_at).toLocaleString()}
               </div>
             </div>
             <button

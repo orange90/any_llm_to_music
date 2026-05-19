@@ -16,3 +16,13 @@ yarn-error.log*
 .pnpm-debug.log*
 .vscode/
 .idea/
+
+.trae/
+.claude/
+.cursor/
+.aider*
+.windsurf/
+.continue/
+.github-copilot/
+CLAUDE.md
+
