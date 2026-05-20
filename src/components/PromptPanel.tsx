@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from './ui/Button';
+import { usePrefs } from './PreferencesProvider';
 
 interface Props {
   prompt: string;
@@ -10,26 +11,21 @@ interface Props {
   disabled: boolean;
 }
 
-const SAMPLES = [
-  'lo-fi hip hop with kick, snare, hi-hats and a mellow piano chord',
-  'fast techno with acid bass and 4 on the floor',
-  'gentle ambient pad in C minor',
-  'jazzy walking bass with brushed drums',
-];
-
 export function PromptPanel({ prompt, onPromptChange, onGenerate, loading, disabled }: Props) {
+  const { t } = usePrefs();
+
   return (
     <div className="flex flex-col gap-3">
-      <label className="text-xs uppercase tracking-wide text-muted">Describe your music</label>
+      <label className="text-xs uppercase tracking-wide text-muted">{t.promptLabel}</label>
       <textarea
         value={prompt}
         onChange={(e) => onPromptChange(e.target.value)}
-        placeholder="e.g. lo-fi hip hop with mellow piano chord"
+        placeholder={t.promptPlaceholder}
         rows={6}
         className="bg-panel2 border border-border rounded-md p-3 text-sm font-mono focus:outline-none focus:border-accent resize-none"
       />
       <div className="flex flex-wrap gap-1">
-        {SAMPLES.map((s) => (
+        {t.samples.map((s) => (
           <button
             key={s}
             type="button"
@@ -41,7 +37,7 @@ export function PromptPanel({ prompt, onPromptChange, onGenerate, loading, disab
         ))}
       </div>
       <Button onClick={onGenerate} disabled={disabled || loading || !prompt.trim()}>
-        {loading ? 'Generating…' : 'Generate'}
+        {loading ? t.generating : t.generate}
       </Button>
     </div>
   );

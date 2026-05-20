@@ -76,7 +76,19 @@ export function useStrudel() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const idle =
+      (typeof window !== 'undefined' &&
+        (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback) ||
+      ((cb: () => void) => setTimeout(cb, 1));
+    idle(() => {
+      if (cancelled) return;
+      ensureInit().catch(() => {
+        // swallow; status/error already captured by ensureInit
+      });
+    });
     return () => {
+      cancelled = true;
       try {
         const mod = modRef.current;
         const hush =
@@ -89,7 +101,7 @@ export function useStrudel() {
         // ignore
       }
     };
-  }, []);
+  }, [ensureInit]);
 
   return { status, error, play, stop };
 }

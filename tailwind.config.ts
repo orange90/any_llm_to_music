@@ -6,14 +6,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: '#0b0d12',
-        panel: '#121520',
-        panel2: '#1a1f2e',
-        border: '#242a3a',
-        accent: '#7c5cff',
-        accent2: '#2ec4b6',
-        text: '#e6e8ee',
-        muted: '#8a90a2',
+        bg: 'var(--color-bg)',
+        panel: 'var(--color-panel)',
+        panel2: 'var(--color-panel2)',
+        border: 'var(--color-border)',
+        accent: 'var(--color-accent)',
+        accent2: 'var(--color-accent2)',
+        text: 'var(--color-text)',
+        muted: 'var(--color-muted)',
+        codebg: 'var(--color-code-bg)',
       },
       fontFamily: {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],

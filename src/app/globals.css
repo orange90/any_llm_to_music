@@ -2,9 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --color-bg: #0b0d12;
+  --color-panel: #121520;
+  --color-panel2: #1a1f2e;
+  --color-border: #242a3a;
+  --color-accent: #7c5cff;
+  --color-accent2: #2ec4b6;
+  --color-text: #e6e8ee;
+  --color-muted: #8a90a2;
+  --color-scrollbar-thumb: #242a3a;
+  --color-selection: rgba(124, 92, 255, 0.4);
+  --color-code-bg: #0d1117;
+}
+
+html.dark {
+  color-scheme: dark;
+  --color-bg: #0b0d12;
+  --color-panel: #121520;
+  --color-panel2: #1a1f2e;
+  --color-border: #242a3a;
+  --color-accent: #7c5cff;
+  --color-accent2: #2ec4b6;
+  --color-text: #e6e8ee;
+  --color-muted: #8a90a2;
+  --color-scrollbar-thumb: #242a3a;
+  --color-selection: rgba(124, 92, 255, 0.4);
+  --color-code-bg: #0d1117;
+}
+
+html.light {
+  color-scheme: light;
+  --color-bg: #f7f8fb;
+  --color-panel: #ffffff;
+  --color-panel2: #f1f3f8;
+  --color-border: #d9dde6;
+  --color-accent: #6244ff;
+  --color-accent2: #0fae9d;
+  --color-text: #1a1d26;
+  --color-muted: #61687a;
+  --color-scrollbar-thumb: #c7ccd6;
+  --color-selection: rgba(98, 68, 255, 0.25);
+  --color-code-bg: #f4f6fa;
+}
+
 html, body {
-  background-color: #0b0d12;
-  color: #e6e8ee;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   height: 100%;
 }
 
@@ -13,7 +58,7 @@ body {
 }
 
 ::selection {
-  background: rgba(124, 92, 255, 0.4);
+  background: var(--color-selection);
 }
 
 textarea, input, button {
@@ -25,7 +70,7 @@ textarea, input, button {
   height: 8px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #242a3a;
+  background: var(--color-scrollbar-thumb);
   border-radius: 4px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
