@@ -6,3 +6,32 @@ declare module '@strudel/web' {
   const _default: unknown;
   export default _default;
 }
+
+declare global {
+  interface StrudelMirrorLike {
+    setCode: (code: string) => void;
+    start?: () => void;
+    stop: () => void;
+    evaluate: (code?: string) => Promise<unknown> | unknown;
+    toggle?: () => void;
+    code?: string;
+  }
+
+  interface StrudelEditorElement extends HTMLElement {
+    editor?: StrudelMirrorLike;
+  }
+
+  interface HTMLElementTagNameMap {
+    'strudel-editor': StrudelEditorElement;
+  }
+
+  namespace JSX {
+    interface IntrinsicElements {
+      'strudel-editor': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        code?: string;
+      };
+    }
+  }
+}
+
+export {};

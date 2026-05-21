@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import type { EndpointGenerateResult } from '@/types';
-import { CodeEditor } from './CodeEditor';
-import { StrudelPlayer } from './StrudelPlayer';
+import { StrudelRepl } from './StrudelRepl';
 import { usePrefs } from './PreferencesProvider';
 
 interface Props {
@@ -44,12 +43,7 @@ export function EndpointResultPanel({ result }: Props) {
 
       {result.ok ? (
         <div className="flex flex-col gap-2 p-3">
-          <div className="h-48">
-            <CodeEditor code={code} onChange={setCode} />
-          </div>
-          <div className="border-t border-border pt-2">
-            <StrudelPlayer code={code} />
-          </div>
+          <StrudelRepl code={code} onCodeChange={setCode} />
         </div>
       ) : (
         <div className="p-3">
