@@ -8,7 +8,8 @@
 
 ## 演示视频
 
-[▶ 点击观看演示视频](./assets/videos/demo.mp4)
+
+https://github.com/user-attachments/assets/ff99441b-6031-433b-a48d-4d38b49ec27d
 
 ## 功能特性
 
