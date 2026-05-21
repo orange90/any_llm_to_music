@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import {
-  DEFAULT_QUOTA_EXCEEDED_MESSAGE,
+  getDefaultQuotaExceededMessage,
   hasUserEndpoints,
   readDefaultLlmConfig,
 } from '@/lib/env';
@@ -25,6 +25,7 @@ const EndpointSchema = z.object({
 const BodySchema = z.object({
   prompt: z.string().min(1).max(4000),
   endpoints: z.array(EndpointSchema).max(10).optional(),
+  lang: z.enum(['en', 'zh']).optional(),
 });
 
 export async function POST(req: Request) {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { prompt, endpoints } = body;
+  const { prompt, endpoints, lang } = body;
 
   if (hasUserEndpoints(endpoints)) {
     const valid = endpoints.filter(
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
   if (def.dailyLimit > 0 && usage.count >= def.dailyLimit) {
     return NextResponse.json(
       {
-        error: DEFAULT_QUOTA_EXCEEDED_MESSAGE,
+        error: getDefaultQuotaExceededMessage(lang),
         quotaExceeded: true,
         defaultQuota: { limit: def.dailyLimit, used: usage.count, remaining: 0 },
       },

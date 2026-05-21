@@ -164,4 +164,6 @@ src/
 
 ## 许可证
 
-MIT.
+本项目采用 **GNU Affero General Public License v3.0 or later（AGPL-3.0-or-later）** 协议发布。完整条款见仓库根目录下的 [LICENSE](./LICENSE) 文件。
+
+本项目依赖 [Strudel](https://strudel.cc/)（`@strudel/web` 等包），Strudel 本身即以 AGPL-3.0-or-later 协议发布。因此，无论是源码分发还是网络部署（SaaS），都需遵守 AGPL 的要求，包括向通过网络与本服务交互的用户提供对应的源代码。

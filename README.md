@@ -8,7 +8,7 @@
 
 ## Features
 
-- 🆓 **Default endpoint out of the box** — server-side default LLM with a daily quota (default 100/day, shared across all visitors). When exhausted, the UI surfaces: `官方提供的AI接口额度不足，可自行接入API`.
+- 🆓 **Default endpoint out of the box** — server-side default LLM with a daily quota (default 100/day, shared across all visitors). When exhausted, the UI surfaces a quota-exceeded message prompting you to plug in your own API.
 - 🔌 **Bring your own endpoints** — add as many OpenAI-compatible AI endpoints as you like in Settings. Each endpoint is just four fields: **Name / Base URL / API Key / Model**.
 - 🧪 **One-click `Test`** on every endpoint — sends a tiny `ping → pong` round-trip to verify connectivity, model availability and key validity at the lowest possible cost.
 - 🎼 **Multi-endpoint parallel generation** — when you have N user endpoints configured, every Generate runs all N concurrently and renders **N independent music panels**, each with its own code editor and play/stop.
@@ -66,12 +66,12 @@ Each endpoint in Settings has only four fields and is stored ONLY in your browse
 
 | Field | Example |
 |---|---|
-| Name | `My OpenAI`, `DeepSeek 主号`, `OpenRouter Claude` |
+| Name | `My OpenAI`, `DeepSeek main`, `OpenRouter Claude` |
 | Base URL | `https://api.openai.com/v1` |
 | API Key | `sk-…` |
 | Model | `gpt-4o-mini`, `deepseek-chat`, `anthropic/claude-3.5-sonnet` |
 
-Click **`＋ 新增接口`** to add another endpoint, click **`Test`** to verify it.
+Click **`+ Add endpoint`** to add another endpoint, click **`Test`** to verify it.
 
 > Because all endpoints share one OpenAI-compatible code path, native Anthropic API (which uses `x-api-key` + `/v1/messages`) is not directly supported. Use Anthropic's OpenAI-compatible gateway, OpenRouter, or any other compatible proxy.
 
@@ -154,8 +154,8 @@ src/
 
 ## Troubleshooting
 
-- **"官方提供的AI接口额度不足，可自行接入API"** → today's shared quota is exhausted. Open Settings and add your own endpoint(s).
-- **"未配置默认 AI 接口"** → no `DEFAULT_LLM_*` env vars set and no user endpoints. Either set the env, or add an endpoint in Settings.
+- **Quota-exceeded error from the default endpoint** → today's shared quota is exhausted. Open Settings and add your own endpoint(s).
+- **"Default AI endpoint not configured" error** → no `DEFAULT_LLM_*` env vars set and no user endpoints. Either set the env, or add an endpoint in Settings.
 - **`Test` fails with 401** → wrong API key or the key has no access to the chosen model.
 - **`Test` fails with 404 / "model not found"** → typo in the Model field, or that model isn't served by this Base URL.
 - **No sound on Play** → click Play once more; ensure your output device is up; check the player error box and browser console.
@@ -164,4 +164,6 @@ src/
 
 ## License
 
-MIT.
+This project is licensed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**. See the [LICENSE](./LICENSE) file for the full text.
+
+This project depends on [Strudel](https://strudel.cc/) (`@strudel/web` and related packages), which is itself licensed under AGPL-3.0-or-later. As a result, any distribution or network deployment of this project must comply with the AGPL, including making the corresponding source code available to users who interact with the service over a network.

@@ -24,5 +24,16 @@ export function hasUserEndpoints(eps?: ClientEndpoint[] | null): eps is ClientEn
   );
 }
 
-export const DEFAULT_QUOTA_EXCEEDED_MESSAGE =
-  '官方提供的AI接口额度不足，可自行接入API';
+export const DEFAULT_QUOTA_EXCEEDED_MESSAGES = {
+  zh: '官方提供的AI接口额度不足，可自行接入API',
+  en: 'The built-in AI endpoint has run out of daily quota. Add your own API endpoint in Settings to keep going.',
+} as const;
+
+export type DefaultQuotaExceededLang = keyof typeof DEFAULT_QUOTA_EXCEEDED_MESSAGES;
+
+export function getDefaultQuotaExceededMessage(lang?: string | null): string {
+  if (lang === 'en' || lang === 'zh') return DEFAULT_QUOTA_EXCEEDED_MESSAGES[lang];
+  return DEFAULT_QUOTA_EXCEEDED_MESSAGES.zh;
+}
+
+export const DEFAULT_QUOTA_EXCEEDED_MESSAGE = DEFAULT_QUOTA_EXCEEDED_MESSAGES.zh;

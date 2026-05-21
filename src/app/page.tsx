@@ -25,7 +25,7 @@ interface RuntimeError {
 
 export default function HomePage() {
   const { endpoints, save, clear, loaded } = useEndpoints();
-  const { t } = usePrefs();
+  const { t, prefs } = usePrefs();
 
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -85,6 +85,7 @@ export default function HomePage() {
         const body = {
           prompt,
           endpoints: ep ? [ep] : undefined,
+          lang: prefs.language,
         };
         const res = await fetch('/api/generate', {
           method: 'POST',
