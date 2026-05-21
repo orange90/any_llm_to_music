@@ -8,12 +8,12 @@
 
 ## Features
 
-- 🆓 **Default endpoint out of the box** — server-side default LLM with a daily quota (default 100/day, shared across all visitors). When exhausted, the UI surfaces a quota-exceeded message prompting you to plug in your own API.
+- 🆓 **Default endpoint out of the box** — server-side default LLM with an optional daily quota (default 100/day, shared across all visitors, enforced only when an Upstash Redis store is configured). When exhausted, the UI surfaces a quota-exceeded message prompting you to plug in your own API.
 - 🔌 **Bring your own endpoints** — add as many OpenAI-compatible AI endpoints as you like in Settings. Each endpoint is just four fields: **Name / Base URL / API Key / Model**.
 - 🧪 **One-click `Test`** on every endpoint — sends a tiny `ping → pong` round-trip to verify connectivity, model availability and key validity at the lowest possible cost.
 - 🎼 **Multi-endpoint parallel generation** — when you have N user endpoints configured, every Generate runs all N concurrently and renders **N independent music panels**, each with its own code editor and play/stop.
 - 🎹 **In-browser playback** via `@strudel/web` (real Strudel engine — not an iframe).
-- 💾 **History** of generated patterns persisted in local SQLite.
+- 💾 **History** of generated patterns persisted in the browser's `localStorage`.
 
 ## Quick start
 
@@ -53,12 +53,12 @@ The default endpoint is a single OpenAI-compatible chat API:
 | `DEFAULT_LLM_BASE_URL` | OpenAI-compatible base URL | `https://api.openai.com/v1` |
 | `DEFAULT_LLM_API_KEY` | API key for the default endpoint | _empty → default endpoint disabled_ |
 | `DEFAULT_LLM_MODEL` | Model id used by the default endpoint | `gpt-4o-mini` |
-| `DEFAULT_LLM_DAILY_LIMIT` | Max calls/day across all visitors (UTC day) | `100` |
-| `DATABASE_PATH` | SQLite file path | `data/app.db` |
+| `DEFAULT_LLM_DAILY_LIMIT` | Max calls/day across all visitors (UTC day, only enforced when Redis is configured) | `100` |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`) | Upstash Redis credentials. When present, the daily counter is persisted in Redis. When absent, the daily quota is **not** enforced. | _unset_ |
 
 If any of `DEFAULT_LLM_BASE_URL`/`DEFAULT_LLM_API_KEY`/`DEFAULT_LLM_MODEL` is empty, the default endpoint is considered **not configured** — users will need their own endpoints in Settings.
 
-The daily counter is persisted in SQLite (`default_llm_usage` table, keyed by UTC date), so it survives restarts and resets at UTC midnight.
+When Redis credentials are present, the daily counter is persisted in Redis (`default_llm_usage:<UTC-date>` keys, auto-expiring after 3 days), so it survives restarts and resets at UTC midnight. Without Redis (typical local dev) the default endpoint is unmetered.
 
 ## Settings: per-endpoint configuration
 
@@ -114,8 +114,7 @@ src/
 │   ├── globals.css
 │   └── api/
 │       ├── generate/route.ts          # POST prompt[+endpoints] → results[]
-│       ├── test-endpoint/route.ts     # POST {baseURL,apiKey,model} → ping/pong
-│       └── tracks/                    # CRUD on history
+│       └── test-endpoint/route.ts     # POST {baseURL,apiKey,model} → ping/pong
 ├── components/
 │   ├── EndpointResultPanel.tsx        # one card per endpoint result
 │   ├── SettingsDrawer.tsx             # endpoints list + Test buttons
@@ -130,7 +129,7 @@ src/
 ├── lib/
 │   ├── llmClient.ts                   # OpenAI-compatible chatComplete + chatPing
 │   ├── env.ts                         # default LLM config + helpers
-│   ├── db.ts                          # tracks + default_llm_usage repos
+│   ├── usageRepo.ts                   # Upstash Redis daily-quota counter (no-op when unset)
 │   ├── prompt.ts
 │   └── strudel/extractCode.ts
 └── types/index.ts
@@ -138,19 +137,13 @@ src/
 
 ## Security notes
 
-- Endpoints saved via Settings live in your browser's `localStorage` and are forwarded to this server with each generate request. They are **never written to the database**. Be mindful on shared machines.
+- Endpoints saved via Settings live in your browser's `localStorage` and are forwarded to this server with each generate request. They are **never persisted on the server**. Be mindful on shared machines.
 - The default endpoint's key (`DEFAULT_LLM_API_KEY`) lives only on the server.
 - The daily quota is a soft sharing limit — there is **no per-user identity**. A trusted abuser could easily drain it. Keep it modest, and rely on user-supplied keys for any real workload.
 
 ## Deployment
 
-`better-sqlite3` is a native module and requires the Node.js runtime (not Edge). On Vercel, route handlers default to `runtime = 'nodejs'` (already set).
-
-## Migrating from previous versions
-
-- The old `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` env vars are gone — replace them with a single `DEFAULT_LLM_*` set, or skip the default and use Settings.
-- The old per-provider `localStorage` (`any_llm_to_music.userKeys.v1`) is auto-migrated on first load to the new `endpoints.v2` shape (one entry per provider that had a key).
-- The `tracks.provider` column has been replaced by `tracks.endpoint_name`; a one-time `ALTER TABLE` migration in `src/lib/db.ts` preserves existing history.
+The route handlers run on the Node.js runtime (`runtime = 'nodejs'`, already set). Deploy to Vercel directly, or self-host with `npm run build && npm start`. See [DEPLOY.md](./DEPLOY.md) for the Vercel + Upstash Redis flow.
 
 ## Troubleshooting
 

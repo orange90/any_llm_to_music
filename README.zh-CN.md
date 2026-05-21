@@ -8,12 +8,12 @@
 
 ## 功能特性
 
-- 🆓 **开箱即用的默认接口** —— 服务端内置默认 LLM，带每日额度限制（默认 100 次/天，所有访客共享）。额度耗尽时，界面会提示：`官方提供的AI接口额度不足，可自行接入API`。
+- 🆓 **开箱即用的默认接口** —— 服务端内置默认 LLM，可选每日额度限制（默认 100 次/天，所有访客共享，仅在配置了 Upstash Redis 时生效）。额度耗尽时，界面会提示：`官方提供的AI接口额度不足，可自行接入API`。
 - 🔌 **自带接口配置** —— 可在「设置」中添加任意数量的 OpenAI 兼容 AI 接口。每个接口仅需四个字段：**名称 / Base URL / API Key / Model**。
 - 🧪 **每个接口一键 `Test`** —— 通过极小开销的 `ping → pong` 往返调用，验证连通性、模型可用性和密钥有效性。
 - 🎼 **多接口并行生成** —— 当配置了 N 个用户接口时，每次「生成」会并行调用全部 N 个接口，并渲染 **N 个独立音乐面板**，每个面板拥有独立的代码编辑器与播放/停止按钮。
 - 🎹 **浏览器内播放** —— 通过 `@strudel/web`（真正的 Strudel 引擎，并非 iframe 嵌入）。
-- 💾 **历史记录** —— 生成的模式持久化保存在本地 SQLite。
+- 💾 **历史记录** —— 生成的模式持久化保存在浏览器的 `localStorage` 中。
 
 ## 快速开始
 
@@ -53,12 +53,12 @@ npm run dev
 | `DEFAULT_LLM_BASE_URL` | OpenAI 兼容 base URL | `https://api.openai.com/v1` |
 | `DEFAULT_LLM_API_KEY` | 默认接口的 API key | _空 → 默认接口被禁用_ |
 | `DEFAULT_LLM_MODEL` | 默认接口使用的模型 id | `gpt-4o-mini` |
-| `DEFAULT_LLM_DAILY_LIMIT` | 全部访客共享的每日最大调用次数（按 UTC 日） | `100` |
-| `DATABASE_PATH` | SQLite 文件路径 | `data/app.db` |
+| `DEFAULT_LLM_DAILY_LIMIT` | 全部访客共享的每日最大调用次数（按 UTC 日，仅在配置 Redis 时生效） | `100` |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN`（或 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`） | Upstash Redis 凭证。设置后，每日计数器持久化到 Redis；未设置则**不限流**。 | _未设置_ |
 
 如果 `DEFAULT_LLM_BASE_URL`/`DEFAULT_LLM_API_KEY`/`DEFAULT_LLM_MODEL` 中任一为空，则视为默认接口**未配置** —— 用户必须在「设置」中提供自己的接口。
 
-每日计数器持久化在 SQLite（`default_llm_usage` 表，按 UTC 日期为键），重启不会丢失，并在 UTC 零点重置。
+当配置了 Redis 凭证时，每日计数器持久化在 Redis（key 前缀 `default_llm_usage:<UTC-date>`，自动 3 天后过期），重启不会丢失，并在 UTC 零点重置。未配置 Redis 时（典型本地开发场景）默认接口不做限流。
 
 ## 设置：单接口配置
 
@@ -114,8 +114,7 @@ src/
 │   ├── globals.css
 │   └── api/
 │       ├── generate/route.ts          # POST prompt[+endpoints] → results[]
-│       ├── test-endpoint/route.ts     # POST {baseURL,apiKey,model} → ping/pong
-│       └── tracks/                    # 历史记录的增删改查
+│       └── test-endpoint/route.ts     # POST {baseURL,apiKey,model} → ping/pong
 ├── components/
 │   ├── EndpointResultPanel.tsx        # 每个接口结果一张卡片
 │   ├── SettingsDrawer.tsx             # 接口列表 + Test 按钮
@@ -130,7 +129,7 @@ src/
 ├── lib/
 │   ├── llmClient.ts                   # OpenAI 兼容 chatComplete + chatPing
 │   ├── env.ts                         # 默认 LLM 配置与辅助函数
-│   ├── db.ts                          # tracks + default_llm_usage 仓储
+│   ├── usageRepo.ts                   # Upstash Redis 每日计数器（未配置时不限流）
 │   ├── prompt.ts
 │   └── strudel/extractCode.ts
 └── types/index.ts
@@ -138,19 +137,13 @@ src/
 
 ## 安全说明
 
-- 在「设置」中保存的接口存放于浏览器 `localStorage`，并随每次生成请求转发给本服务端。它们**绝不会写入数据库**。在共享机器上请谨慎使用。
+- 在「设置」中保存的接口存放于浏览器 `localStorage`，并随每次生成请求转发给本服务端。它们**绝不会持久化在服务端**。在共享机器上请谨慎使用。
 - 默认接口的密钥（`DEFAULT_LLM_API_KEY`）仅存在于服务端。
 - 每日额度是一个软性共享限制 —— **没有按用户身份的隔离**。恶意访客很容易将其耗尽。请将额度设得保守一些，对真实工作负载请使用用户自有密钥。
 
 ## 部署
 
-`better-sqlite3` 是原生模块，需运行在 Node.js runtime（而非 Edge）。在 Vercel 上，路由处理器默认使用 `runtime = 'nodejs'`（已设置）。
-
-## 旧版本迁移
-
-- 旧的 `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` 环境变量已废弃 —— 请用单一的 `DEFAULT_LLM_*` 替代，或不配置默认接口、改用「设置」。
-- 旧的按 provider 划分的 `localStorage`（`any_llm_to_music.userKeys.v1`）会在首次加载时自动迁移到新的 `endpoints.v2` 结构（每个有密钥的 provider 一条记录）。
-- 旧的 `tracks.provider` 列已被 `tracks.endpoint_name` 替代；`src/lib/db.ts` 中的一次性 `ALTER TABLE` 迁移会保留既有历史记录。
+路由处理器运行在 Node.js runtime（已设置 `runtime = 'nodejs'`）。可以直接部署到 Vercel，也可以使用 `npm run build && npm start` 自托管。Vercel + Upstash Redis 的具体步骤见 [DEPLOY.md](./DEPLOY.md)。
 
 ## 故障排查
 

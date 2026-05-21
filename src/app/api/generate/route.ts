@@ -59,19 +59,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const usage = await defaultUsageRepo.today();
-  if (def.dailyLimit > 0 && usage.count >= def.dailyLimit) {
-    return NextResponse.json(
-      {
-        error: getDefaultQuotaExceededMessage(lang),
-        quotaExceeded: true,
-        defaultQuota: { limit: def.dailyLimit, used: usage.count, remaining: 0 },
-      },
-      { status: 429 },
-    );
-  }
+  if (defaultUsageRepo.enabled) {
+    const usage = await defaultUsageRepo.today();
+    if (def.dailyLimit > 0 && usage.count >= def.dailyLimit) {
+      return NextResponse.json(
+        {
+          error: getDefaultQuotaExceededMessage(lang),
+          quotaExceeded: true,
+          defaultQuota: { limit: def.dailyLimit, used: usage.count, remaining: 0 },
+        },
+        { status: 429 },
+      );
+    }
 
-  const next = await defaultUsageRepo.increment();
+    const next = await defaultUsageRepo.increment();
+
+    const result = await runEndpoint(prompt, {
+      id: 'default',
+      name: 'Default (官方)',
+      baseURL: def.baseURL,
+      apiKey: def.apiKey,
+      model: def.model,
+    });
+
+    const response: GenerateResponse = {
+      source: 'default',
+      results: [result],
+      defaultQuota: {
+        limit: def.dailyLimit,
+        used: next.count,
+        remaining: Math.max(0, def.dailyLimit - next.count),
+      },
+    };
+    return NextResponse.json(response);
+  }
 
   const result = await runEndpoint(prompt, {
     id: 'default',
@@ -84,11 +105,6 @@ export async function POST(req: Request) {
   const response: GenerateResponse = {
     source: 'default',
     results: [result],
-    defaultQuota: {
-      limit: def.dailyLimit,
-      used: next.count,
-      remaining: Math.max(0, def.dailyLimit - next.count),
-    },
   };
   return NextResponse.json(response);
 }

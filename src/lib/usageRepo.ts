@@ -8,6 +8,7 @@ export interface UsageRow {
 export interface UsageRepo {
   today(): Promise<UsageRow>;
   increment(): Promise<UsageRow>;
+  enabled: boolean;
 }
 
 function todayKey(): string {
@@ -43,6 +44,7 @@ async function getRedis(creds: { url: string; token: string }): Promise<RedisTyp
 
 function createRedisRepo(creds: { url: string; token: string }): UsageRepo {
   return {
+    enabled: true,
     async today(): Promise<UsageRow> {
       const redis = await getRedis(creds);
       const day = todayKey();
@@ -60,15 +62,14 @@ function createRedisRepo(creds: { url: string; token: string }): UsageRepo {
   };
 }
 
-function createSqliteRepo(): UsageRepo {
+function createNoopRepo(): UsageRepo {
   return {
+    enabled: false,
     async today(): Promise<UsageRow> {
-      const mod = await import('./db');
-      return mod.defaultUsageRepo.today();
+      return { day: todayKey(), count: 0 };
     },
     async increment(): Promise<UsageRow> {
-      const mod = await import('./db');
-      return mod.defaultUsageRepo.increment();
+      return { day: todayKey(), count: 0 };
     },
   };
 }
@@ -78,11 +79,14 @@ let _repo: UsageRepo | null = null;
 export function getUsageRepo(): UsageRepo {
   if (_repo) return _repo;
   const creds = readRedisCreds();
-  _repo = creds ? createRedisRepo(creds) : createSqliteRepo();
+  _repo = creds ? createRedisRepo(creds) : createNoopRepo();
   return _repo;
 }
 
 export const defaultUsageRepo: UsageRepo = {
+  get enabled() {
+    return getUsageRepo().enabled;
+  },
   today: () => getUsageRepo().today(),
   increment: () => getUsageRepo().increment(),
 };

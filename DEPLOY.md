@@ -1,13 +1,13 @@
 # Deploy to Vercel
 
-This project supports two storage backends for the **default-LLM daily quota counter**, selected automatically at runtime:
+The default-LLM **daily quota counter** is backed by **Upstash Redis**. When Redis credentials are present, the counter is enforced and persisted; when absent, the daily quota is simply not enforced (typical local-dev behaviour).
 
-| Environment | Backend | Trigger |
+| Environment | Behaviour | Trigger |
 | --- | --- | --- |
-| Vercel / any serverless | Upstash Redis (REST) | When `KV_REST_API_URL` + `KV_REST_API_TOKEN` (or the `UPSTASH_REDIS_*` equivalents) are set |
-| Local development | SQLite at `data/app.db` | When no Redis credentials are present |
+| Vercel / any serverless | Counter persisted in Upstash Redis | `KV_REST_API_URL` + `KV_REST_API_TOKEN` (or the `UPSTASH_REDIS_*` equivalents) are present |
+| Local development | No daily quota enforcement | No Redis credentials configured |
 
-You don't need to change any code — the app picks the right backend on boot.
+You don't need to change any code — the app picks the right behaviour on boot.
 
 ---
 
@@ -36,7 +36,7 @@ Vercel will inject the following env vars into your deployments automatically:
 - `KV_REST_API_TOKEN`
 - (and/or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`)
 
-The app accepts either pair.
+The app accepts either pair. If you skip this step, the deploy still works but the daily quota will not be enforced.
 
 ## 4. Configure environment variables
 
@@ -51,8 +51,6 @@ In **Project → Settings → Environment Variables**, add the LLM defaults (Pro
 
 If you leave the `DEFAULT_LLM_*` block empty, users must configure their own endpoint via Settings inside the app — that path doesn't need Redis at all.
 
-> Do **not** set `DATABASE_PATH` on Vercel. SQLite is unused there.
-
 ## 5. Deploy
 
 Click **Deploy**. Subsequent pushes to the connected branch trigger automatic redeploys.
@@ -64,7 +62,7 @@ Click **Deploy**. Subsequent pushes to the connected branch trigger automatic re
 ```bash
 cp .env.example .env.local
 # Fill in DEFAULT_LLM_* if you want the official endpoint in dev.
-# Leave KV_REST_API_* blank to use SQLite.
+# Leave KV_REST_API_* blank — locally the daily quota is unmetered.
 npm install
 npm run dev
 ```
@@ -73,6 +71,5 @@ To exercise the Redis path locally, run `vercel env pull .env.local` after step 
 
 ## Notes
 
-- `better-sqlite3` is in `optionalDependencies`. If its native build fails on Vercel's runner, the deploy still succeeds because the Redis path is used at runtime.
 - The Redis counter uses key prefix `default_llm_usage:<UTC-date>` and auto-expires after 3 days.
-- Day rollover is computed in UTC, matching the original SQLite implementation.
+- Day rollover is computed in UTC.
