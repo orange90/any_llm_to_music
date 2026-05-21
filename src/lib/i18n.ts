@@ -1,17 +1,17 @@
 import type { Language } from '@/hooks/usePreferences';
 
 const SAMPLES_EN = [
-  'lo-fi hip hop with kick, snare, hi-hats and a mellow piano chord',
-  'fast techno with acid bass and 4 on the floor',
-  'gentle ambient pad in C minor',
-  'jazzy walking bass with brushed drums',
+  'Dreamy lo-fi hip hop at 78 bpm in F# minor: dusty boom-bap kick on 1 and 3, soft snare with vinyl crackle on 2 and 4, swung closed hats, warm Rhodes 7th chords (F#m9 - Bmaj7 - C#m7 - A6) with light low-pass filter, a sub bass following the chord roots, and gentle tape hiss plus long room reverb for a late-night studying mood.',
+  'Driving 130 bpm techno in A minor: relentless 4-on-the-floor kick, off-beat open hats and clap on 2/4, a hypnotic 16th-note acid bassline (a1 a2 c2 e2 g1 a2 c3 e2) on a sawtooth synth with slowly opening resonant low-pass filter, sparse industrial percussion stabs, layered with a moody dark pad in the background and heavy plate reverb on the snare.',
+  'Spacious ambient soundscape in C minor at 60 bpm: slow evolving pad chords (Cm9 - Abmaj7 - Ebmaj7 - Gm7) with long attack and release, glassy bell arpeggios drifting in the high register, sub-bass drone holding the tonic, ocean-like noise sweeps panning gently left and right, generous hall reverb and long delay, evoking a calm starlit night.',
+  'Smooth late-night jazz trio at 95 bpm in Bb major: upright walking bass outlining ii-V-I changes (Cm7 - F7 - Bbmaj7 - G7), brushed snare swing pattern with soft ride cymbal on the bell, mellow Rhodes piano comping syncopated 9th and 13th voicings, a tasteful muted trumpet improvising a short bluesy phrase every 4 bars, light room reverb and warm tape saturation.',
 ];
 
 const SAMPLES_ZH = [
-  '低保真 hip hop，含底鼓、军鼓、踩镲与柔和的钢琴和弦',
-  '快速 techno，配合酸性贝斯与四四拍底鼓',
-  'C 小调的轻柔氛围 pad',
-  '爵士风格的行走贝斯，搭配刷扫军鼓',
+  '梦幻 lo-fi hip hop，78 bpm，升 F 小调：1、3 拍上是带灰尘感的 boom-bap 底鼓，2、4 拍是柔和军鼓配黑胶噪声，摇摆律动的闭镲，温暖的 Rhodes 七和弦（F#m9 - Bmaj7 - C#m7 - A6）经过轻微低通滤波，sub 贝斯跟随根音走动，叠加磁带嘶声和较长的房间混响，营造深夜自习的慵懒氛围。',
+  '推进感强烈的 techno，130 bpm，A 小调：稳定的四四拍底鼓，反拍开镲与 2/4 拍 clap，催眠般的 16 分酸性贝斯线（a1 a2 c2 e2 g1 a2 c3 e2）使用锯齿波合成器，配缓慢打开的共振低通滤波，零星的工业感打击 stab，底层叠加阴郁的暗色 pad，军鼓加重 plate 混响。',
+  '辽阔的氛围音景，C 小调，60 bpm：缓慢演进的 pad 和弦（Cm9 - Abmaj7 - Ebmaj7 - Gm7），attack 与 release 都很长；高音区有玻璃般的钟琴琶音飘过，sub 贝斯持续低吟主音；海浪般的噪声 sweep 左右轻轻摇移，大厅混响与长延迟充足，仿佛宁静的星空夜晚。',
+  '深夜爵士三重奏，95 bpm，降 B 大调：贝斯以行走低音勾勒 ii-V-I 进行（Cm7 - F7 - Bbmaj7 - G7），刷扫军鼓配吊镲铃部摇摆律动，温润的 Rhodes 钢琴使用切分的 9 和 13 音色伴奏，每 4 小节加入一段含蓄的弱音小号布鲁斯短乐句，轻微房间混响与磁带饱和。',
 ];
 
 export const STRINGS = {

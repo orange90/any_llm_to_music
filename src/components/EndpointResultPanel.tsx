@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { EndpointGenerateResult } from '@/types';
 import { StrudelRepl } from './StrudelRepl';
 import { usePrefs } from './PreferencesProvider';
@@ -14,23 +14,32 @@ export function EndpointResultPanel({ result }: Props) {
   const [showRaw, setShowRaw] = useState(false);
   const { t } = usePrefs();
 
+  useEffect(() => {
+    if (result.code && result.code !== code) {
+      setCode(result.code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result.code]);
+
   return (
     <div className="border border-border rounded-md bg-panel2 flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-3 h-9 border-b border-border bg-panel">
         <div className="flex items-center gap-2 min-w-0">
           <span
             className={`text-xs px-2 py-0.5 rounded ${
-              result.ok
-                ? 'bg-accent2/20 text-accent2'
-                : 'bg-red-500/20 text-red-500 dark:text-red-300'
+              result.pending
+                ? 'bg-accent/20 text-accent'
+                : result.ok
+                  ? 'bg-accent2/20 text-accent2'
+                  : 'bg-red-500/20 text-red-500 dark:text-red-300'
             }`}
           >
-            {result.ok ? '✓' : '✗'}
+            {result.pending ? '⋯' : result.ok ? '✓' : '✗'}
           </span>
           <span className="text-sm font-medium truncate">{result.endpointName}</span>
           <span className="text-xs text-muted truncate">· {result.model}</span>
         </div>
-        {result.raw && (
+        {result.raw && !result.pending && (
           <button
             type="button"
             onClick={() => setShowRaw((v) => !v)}
@@ -41,7 +50,17 @@ export function EndpointResultPanel({ result }: Props) {
         )}
       </div>
 
-      {result.ok ? (
+      {result.pending ? (
+        <div className="p-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+            <span>{t.generating}</span>
+          </div>
+          <div className="h-3 rounded bg-panel animate-pulse" />
+          <div className="h-3 rounded bg-panel animate-pulse w-5/6" />
+          <div className="h-3 rounded bg-panel animate-pulse w-2/3" />
+        </div>
+      ) : result.ok ? (
         <div className="flex flex-col gap-2 p-3">
           <StrudelRepl code={code} onCodeChange={setCode} />
         </div>

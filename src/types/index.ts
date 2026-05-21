@@ -24,6 +24,15 @@ export interface Track {
   created_at: number;
 }
 
+export interface HistoryEntry {
+  id: string;
+  title: string;
+  prompt: string;
+  created_at: number;
+  source: 'default' | 'user';
+  results: EndpointGenerateResult[];
+}
+
 export interface GenerateRequest {
   prompt: string;
   endpoints?: ClientEndpoint[];
@@ -34,6 +43,7 @@ export interface EndpointGenerateResult {
   endpointName: string;
   model: string;
   ok: boolean;
+  pending?: boolean;
   code?: string;
   raw?: string;
   track?: Track;

@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type {
+  ClientEndpoint,
   EndpointGenerateResult,
   GenerateResponse,
-  Track,
+  HistoryEntry,
 } from '@/types';
 import { PromptPanel } from '@/components/PromptPanel';
 import { HistoryList } from '@/components/HistoryList';
@@ -35,53 +36,150 @@ export default function HomePage() {
     null,
   );
 
-  const { tracks, loaded: tracksLoaded, addMany, remove } = useTracks();
+  const { entries, loaded: tracksLoaded, add: addEntry, remove } = useTracks();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const requestIdRef = useRef(0);
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
+    const requestId = ++requestIdRef.current;
     setGenerating(true);
     setGenError(null);
-    setResults([]);
     setSource(null);
-    try {
-      const validEndpoints = endpoints.filter(
-        (e) => e.apiKey.trim() && e.baseURL.trim() && e.model.trim(),
-      );
-      const body = {
-        prompt,
-        endpoints: validEndpoints.length ? validEndpoints : undefined,
-      };
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setGenError({
-          message: data?.error || `HTTP ${res.status}`,
-          quotaExceeded: data?.quotaExceeded === true,
-          defaultQuota: data?.defaultQuota,
+
+    const validEndpoints = endpoints.filter(
+      (e) => e.apiKey.trim() && e.baseURL.trim() && e.model.trim(),
+    );
+    const useUser = validEndpoints.length > 0;
+
+    const placeholders: EndpointGenerateResult[] = useUser
+      ? validEndpoints.map((ep) => ({
+          endpointId: ep.id,
+          endpointName: ep.name,
+          model: ep.model,
+          ok: false,
+          pending: true,
+        }))
+      : [
+          {
+            endpointId: 'default',
+            endpointName: 'Default',
+            model: '…',
+            ok: false,
+            pending: true,
+          },
+        ];
+    setResults(placeholders);
+    setSource(useUser ? 'user' : 'default');
+
+    const finalResults: EndpointGenerateResult[] = [...placeholders];
+
+    const callOne = async (
+      ep: ClientEndpoint | null,
+      slotIndex: number,
+    ): Promise<void> => {
+      const placeholder = placeholders[slotIndex];
+      try {
+        const body = {
+          prompt,
+          endpoints: ep ? [ep] : undefined,
+        };
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
         });
-        if (data?.defaultQuota) setDefaultQuota(data.defaultQuota);
-        return;
+        const data = await res.json();
+        if (requestIdRef.current !== requestId) return;
+
+        if (!res.ok) {
+          if (data?.defaultQuota) setDefaultQuota(data.defaultQuota);
+          if (!ep) {
+            setGenError({
+              message: data?.error || `HTTP ${res.status}`,
+              quotaExceeded: data?.quotaExceeded === true,
+              defaultQuota: data?.defaultQuota,
+            });
+          }
+          const errResult: EndpointGenerateResult = {
+            endpointId: placeholder.endpointId,
+            endpointName: placeholder.endpointName,
+            model: placeholder.model,
+            ok: false,
+            error: data?.error || `HTTP ${res.status}`,
+          };
+          finalResults[slotIndex] = errResult;
+          setResults((prev) => {
+            const next = [...prev];
+            next[slotIndex] = errResult;
+            return next;
+          });
+          return;
+        }
+
+        const ok = data as GenerateResponse;
+        if (ok.defaultQuota) setDefaultQuota(ok.defaultQuota);
+        const single = ok.results[0];
+        const merged: EndpointGenerateResult = single
+          ? single
+          : {
+              endpointId: placeholder.endpointId,
+              endpointName: placeholder.endpointName,
+              model: placeholder.model,
+              ok: false,
+              error: '接口无返回',
+            };
+        finalResults[slotIndex] = merged;
+        setResults((prev) => {
+          const next = [...prev];
+          next[slotIndex] = merged;
+          return next;
+        });
+      } catch (err) {
+        if (requestIdRef.current !== requestId) return;
+        const errResult: EndpointGenerateResult = {
+          endpointId: placeholder.endpointId,
+          endpointName: placeholder.endpointName,
+          model: placeholder.model,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+        finalResults[slotIndex] = errResult;
+        setResults((prev) => {
+          const next = [...prev];
+          next[slotIndex] = errResult;
+          return next;
+        });
       }
-      const ok = data as GenerateResponse;
-      setResults(ok.results);
-      setSource(ok.source);
-      if (ok.defaultQuota) setDefaultQuota(ok.defaultQuota);
-      const newTracks = ok.results
-        .map((r) => r.track)
-        .filter((tr): tr is Track => Boolean(tr));
-      if (newTracks.length) addMany(newTracks);
-    } catch (err) {
-      setGenError({ message: err instanceof Error ? err.message : String(err) });
-    } finally {
-      setGenerating(false);
+    };
+
+    const tasks = useUser
+      ? validEndpoints.map((ep, i) => callOne(ep, i))
+      : [callOne(null, 0)];
+
+    await Promise.all(tasks);
+
+    if (requestIdRef.current !== requestId) return;
+
+    setGenerating(false);
+
+    if (finalResults.some((r) => r.ok)) {
+      const firstTrack = finalResults.find((r) => r.track)?.track;
+      const entry: HistoryEntry = {
+        id:
+          firstTrack?.id ??
+          `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        title: firstTrack?.title ?? prompt.trim().slice(0, 60),
+        prompt,
+        created_at: firstTrack?.created_at ?? Date.now(),
+        source: useUser ? 'user' : 'default',
+        results: finalResults,
+      };
+      addEntry(entry);
     }
-  }, [prompt, endpoints, addMany]);
+  }, [prompt, endpoints, addEntry]);
 
   const handleDelete = useCallback(
     (id: string) => {
@@ -90,18 +188,13 @@ export default function HomePage() {
     [remove],
   );
 
-  const handlePickTrack = useCallback((track: Track) => {
-    setPrompt(track.prompt);
-    setResults([
-      {
-        endpointId: 'history',
-        endpointName: track.endpoint_name + ' (history)',
-        model: track.model,
-        ok: true,
-        code: track.code,
-      },
-    ]);
-    setSource(null);
+  const handlePickEntry = useCallback((entry: HistoryEntry) => {
+    requestIdRef.current++;
+    setPrompt(entry.prompt);
+    setResults(entry.results);
+    setSource(entry.source);
+    setGenError(null);
+    setGenerating(false);
   }, []);
 
   const usingDefault = endpoints.length === 0 || !endpoints.some((e) => e.apiKey.trim());
@@ -161,8 +254,8 @@ export default function HomePage() {
           )}
           <div className="mt-2 flex-1 min-h-0 flex flex-col">
             <HistoryList
-              tracks={tracks}
-              onPick={handlePickTrack}
+              entries={entries}
+              onPick={handlePickEntry}
               onDelete={handleDelete}
               loading={tracksLoading}
             />

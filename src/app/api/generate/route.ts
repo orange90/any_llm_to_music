@@ -9,7 +9,7 @@ import {
 import { chatComplete } from '@/lib/llmClient';
 import { STRUDEL_SYSTEM_PROMPT, buildUserMessage } from '@/lib/prompt';
 import { extractCode, summarizeTitle } from '@/lib/strudel/extractCode';
-import { defaultUsageRepo } from '@/lib/db';
+import { defaultUsageRepo } from '@/lib/usageRepo';
 import type { EndpointGenerateResult, GenerateResponse } from '@/types';
 
 export const runtime = 'nodejs';
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const usage = defaultUsageRepo.today();
+  const usage = await defaultUsageRepo.today();
   if (def.dailyLimit > 0 && usage.count >= def.dailyLimit) {
     return NextResponse.json(
       {
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const next = defaultUsageRepo.increment();
+  const next = await defaultUsageRepo.increment();
 
   const result = await runEndpoint(prompt, {
     id: 'default',
