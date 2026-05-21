@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { playbackBus } from '@/lib/strudel/playbackBus';
+import { installAudioTap } from '@/lib/strudel/audioTap';
 import { usePrefs } from './PreferencesProvider';
+import { WaveformVisualizer } from './WaveformVisualizer';
 
 interface Props {
   code: string;
@@ -59,6 +61,7 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    installAudioTap();
     ensureStrudelReplScript()
       .then(() => {
         if (!cancelled) setScriptReady(true);
@@ -294,6 +297,7 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
         )}
         <span className={`text-xs ${statusClass}`}>{statusLabel}</span>
       </div>
+      <WaveformVisualizer active={isActive} />
       <div
         ref={hostRef}
         className="strudel-host w-full min-h-[14rem] rounded-md border border-border overflow-hidden bg-codebg"
