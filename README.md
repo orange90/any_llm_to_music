@@ -155,6 +155,26 @@ The route handlers run on the Node.js runtime (`runtime = 'nodejs'`, already set
 - **Slow first Play** → dirt-samples are being fetched from GitHub. Subsequent plays are cached.
 - **Generated code throws** → click the code panel to edit, fix manually, or re-prompt.
 
+## Roadmap — next version
+
+### Song-structure aware generation (planned)
+
+**Problem.** Today the user has to know a fair bit of music theory (tempo, key, voicings, song form, etc.) to coax a non-trivial result out of the LLM. With the default prompt, a one-liner like *"make me a sad jazz tune"* tends to produce a single flat Strudel pattern that loops without variation — no intro, no verse/chorus contrast, no bridge, no outro. It sounds repetitive because, structurally, it _is_ repetitive.
+
+**Goal.** Let the user describe a song in **one plain sentence** and have the LLM act as an arranger:
+
+1. **Decompose the request.** From the natural-language brief, the LLM first produces a high-level **song plan** (a structured JSON / outline), not Strudel code. The plan covers:
+   - Global parameters: tempo (BPM), key & mode, time signature, overall mood, target duration.
+   - Section list with explicit roles: `intro`, `verse`, `pre-chorus`, `chorus`, `bridge`, `breakdown`, `outro`, …
+   - Per-section attributes: bars/length, harmonic progression, rhythmic motif, instrumentation (drums / bass / pads / lead / fx), dynamics, and how it should _contrast_ with the neighboring sections.
+2. **Render each section.** The plan is then expanded — section by section — into Strudel code, either in a single follow-up LLM call or in N parallel calls (one per section). Each section reuses the global key/tempo so they line up.
+3. **Stitch the song together.** The host concatenates the per-section patterns into one Strudel program with proper cycle/bar arrangement (e.g. via `cat`, `seq`, `arrange`, or a timeline of `.early`/`.late` cues), so the final output plays as a real arc — intro → verse → chorus → … → outro — instead of one infinite loop.
+4. **Surface the plan in the UI.** Show the song plan as an editable outline above the code panels, so users can tweak section order, swap a chorus for a bridge, change the key, or regenerate just one section without redoing the whole song.
+
+**Why this matters.** It moves the user's mental model from *"prompt → one pattern"* to *"prompt → arrangement → patterns → song"*, which is what makes the result feel composed instead of looped. It also turns the existing multi-endpoint parallelism into something more useful than running the same prompt N times: different endpoints can render different sections, or compete on the same section.
+
+> Status: **design-only**, not implemented yet. Tracking item for the next version. Implementation will likely touch `src/lib/prompt.ts` (a new "arranger" system prompt), `src/app/api/generate/route.ts` (two-stage call: plan, then sections), and the UI (a new song-plan panel above the result panels).
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**. See the [LICENSE](./LICENSE) file for the full text.
