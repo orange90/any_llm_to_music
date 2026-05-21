@@ -6,6 +6,10 @@
 
 ![flow](https://img.shields.io/badge/flow-prompt%20%E2%86%92%20LLM(s)%20%E2%86%92%20Strudel%20%E2%86%92%20audio-7c5cff)
 
+## Demo
+
+[▶ Watch the demo video](./assets/videos/demo.mp4)
+
 ## Features
 
 - 🆓 **Default endpoint out of the box** — server-side default LLM with an optional daily quota (default 100/day, shared across all visitors, enforced only when an Upstash Redis store is configured). When exhausted, the UI surfaces a quota-exceeded message prompting you to plug in your own API.

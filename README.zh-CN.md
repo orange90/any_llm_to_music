@@ -6,6 +6,10 @@
 
 ![flow](https://img.shields.io/badge/flow-prompt%20%E2%86%92%20LLM(s)%20%E2%86%92%20Strudel%20%E2%86%92%20audio-7c5cff)
 
+## 演示视频
+
+[▶ 点击观看演示视频](./assets/videos/demo.mp4)
+
 ## 功能特性
 
 - 🆓 **开箱即用的默认接口** —— 服务端内置默认 LLM，可选每日额度限制（默认 100 次/天，所有访客共享，仅在配置了 Upstash Redis 时生效）。额度耗尽时，界面会提示：`官方提供的AI接口额度不足，可自行接入API`。
