@@ -65,6 +65,7 @@ export const STRINGS = {
     playerStop: '■ Stop',
     playerHint:
       'First Play loads dirt-samples (~MBs from GitHub). Audio requires a user click — browser autoplay policy.',
+    playerErrorTitle: 'Code error — please regenerate or fix manually:',
     codePlaceholder: '// Strudel code will appear here',
 
     drawerClose: 'Close',
@@ -152,6 +153,7 @@ export const STRINGS = {
     playerPlay: '▶ 播放',
     playerStop: '■ 停止',
     playerHint: '首次播放会从 GitHub 加载 dirt-samples（数 MB）。受浏览器自动播放策略限制，必须由用户点击触发。',
+    playerErrorTitle: '代码运行出错——请尝试重新生成或手动修改：',
     codePlaceholder: '// 生成的 Strudel 代码会显示在这里',
 
     drawerClose: '关闭',

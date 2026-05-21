@@ -54,6 +54,7 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [editorReady, setEditorReady] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const capturingErrorsRef = useRef(false);
   const { t } = usePrefs();
 
   useEffect(() => {
@@ -99,6 +100,7 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
   useEffect(() => {
     const el = editorElRef.current;
     if (!el) return;
+    setError(null);
     let cancelled = false;
     const tryApply = () => {
       if (cancelled) return;
@@ -156,6 +158,7 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
       unsubscribe = playbackBus.subscribe((activeId) => {
         setIsActive(activeId === instanceId);
         if (activeId !== instanceId) {
+          capturingErrorsRef.current = false;
           try {
             el.editor?.stop?.();
           } catch {
@@ -191,12 +194,42 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
     return () => window.clearInterval(id);
   }, [onCodeChange, scriptReady, code]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onLog = (e: Event) => {
+      if (!capturingErrorsRef.current) return;
+      const detail = (e as CustomEvent).detail as
+        | { message?: string; type?: string }
+        | undefined;
+      if (!detail) return;
+      const msg = typeof detail.message === 'string' ? detail.message : '';
+      const isError =
+        detail.type === 'error' ||
+        /(^|\s)error[: ]/i.test(msg) ||
+        /^\[[^\]]+\]\s*error:/i.test(msg);
+      if (!isError) return;
+      const cleaned = msg.replace(/^\[[^\]]+\]\s*error:\s*/i, '').trim();
+      setError(cleaned || msg);
+    };
+    document.addEventListener('strudel.log', onLog as EventListener);
+    return () => {
+      document.removeEventListener('strudel.log', onLog as EventListener);
+    };
+  }, []);
+
   const handlePlay = useCallback(() => {
     const editor = editorElRef.current?.editor;
     if (!editor || typeof editor.evaluate !== 'function') return;
+    setError(null);
+    capturingErrorsRef.current = true;
     try {
       playbackBus.setActive(instanceId);
-      editor.evaluate();
+      const result = editor.evaluate();
+      if (result && typeof (result as Promise<unknown>).then === 'function') {
+        (result as Promise<unknown>).catch((err) => {
+          setError(err instanceof Error ? err.message : String(err));
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -205,6 +238,7 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
   const handleStop = useCallback(() => {
     const editor = editorElRef.current?.editor;
     if (!editor || typeof editor.stop !== 'function') return;
+    capturingErrorsRef.current = false;
     try {
       editor.stop();
     } catch (err) {
@@ -269,9 +303,14 @@ export function StrudelRepl({ code, onCodeChange }: Props) {
         <p className="text-xs text-muted">Loading Strudel REPL…</p>
       )}
       {error && (
-        <pre className="text-xs text-red-500 dark:text-red-300 bg-red-500/10 border border-red-500/30 rounded p-2 whitespace-pre-wrap break-words">
-          {error}
-        </pre>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-medium text-red-500 dark:text-red-300">
+            {t.playerErrorTitle}
+          </p>
+          <pre className="text-xs text-red-500 dark:text-red-300 bg-red-500/10 border border-red-500/30 rounded p-2 whitespace-pre-wrap break-words">
+            {error}
+          </pre>
+        </div>
       )}
     </div>
   );
