@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type {
   EndpointGenerateResult,
   GenerateResponse,
@@ -12,6 +12,7 @@ import { SettingsDrawer } from '@/components/SettingsDrawer';
 import { EndpointResultPanel } from '@/components/EndpointResultPanel';
 import { Button } from '@/components/ui/Button';
 import { useEndpoints } from '@/hooks/useEndpoints';
+import { useTracks } from '@/hooks/useTracks';
 import { usePrefs } from '@/components/PreferencesProvider';
 import type { Strings } from '@/lib/i18n';
 
@@ -34,28 +35,9 @@ export default function HomePage() {
     null,
   );
 
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [tracksLoading, setTracksLoading] = useState(false);
+  const { tracks, loaded: tracksLoaded, addMany, remove } = useTracks();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const refreshTracks = useCallback(async () => {
-    setTracksLoading(true);
-    try {
-      const res = await fetch('/api/tracks');
-      const data = (await res.json()) as { tracks: Track[] };
-      setTracks(data.tracks);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setTracksLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-    refreshTracks();
-  }, [loaded, refreshTracks]);
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
@@ -90,24 +72,22 @@ export default function HomePage() {
       setResults(ok.results);
       setSource(ok.source);
       if (ok.defaultQuota) setDefaultQuota(ok.defaultQuota);
-      await refreshTracks();
+      const newTracks = ok.results
+        .map((r) => r.track)
+        .filter((tr): tr is Track => Boolean(tr));
+      if (newTracks.length) addMany(newTracks);
     } catch (err) {
       setGenError({ message: err instanceof Error ? err.message : String(err) });
     } finally {
       setGenerating(false);
     }
-  }, [prompt, endpoints, refreshTracks]);
+  }, [prompt, endpoints, addMany]);
 
   const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        await fetch(`/api/tracks/${id}`, { method: 'DELETE' });
-        await refreshTracks();
-      } catch (err) {
-        console.error(err);
-      }
+    (id: string) => {
+      remove(id);
     },
-    [refreshTracks],
+    [remove],
   );
 
   const handlePickTrack = useCallback((track: Track) => {
@@ -126,6 +106,7 @@ export default function HomePage() {
 
   const usingDefault = endpoints.length === 0 || !endpoints.some((e) => e.apiKey.trim());
   const customCount = endpoints.filter((e) => e.apiKey.trim()).length;
+  const tracksLoading = !tracksLoaded || !loaded;
 
   return (
     <main className="h-screen flex flex-col">

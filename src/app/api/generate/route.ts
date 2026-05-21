@@ -9,7 +9,7 @@ import {
 import { chatComplete } from '@/lib/llmClient';
 import { STRUDEL_SYSTEM_PROMPT, buildUserMessage } from '@/lib/prompt';
 import { extractCode, summarizeTitle } from '@/lib/strudel/extractCode';
-import { defaultUsageRepo, tracksRepo } from '@/lib/db';
+import { defaultUsageRepo } from '@/lib/db';
 import type { EndpointGenerateResult, GenerateResponse } from '@/types';
 
 export const runtime = 'nodejs';
@@ -116,14 +116,15 @@ async function runEndpoint(
       };
     }
 
-    const track = tracksRepo.create({
+    const track = {
       id: nanoid(),
       title: summarizeTitle(prompt),
       prompt,
       code,
       endpoint_name: ep.name,
       model: ep.model,
-    });
+      created_at: Date.now(),
+    };
 
     return {
       endpointId: ep.id,
